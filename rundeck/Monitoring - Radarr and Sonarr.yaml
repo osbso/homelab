@@ -1,0 +1,35 @@
+- defaultTab: nodes
+  description: Checks if Radarr and Sonarr are reachable
+  executionEnabled: true
+  group: Monitoring
+  id: monitoring-homelab-radarr-and-sonarr
+  loglevel: INFO
+  name: Check Radarr and Sonarr
+  nodeFilterEditable: false
+  notification:
+    onfailure:
+      email:
+        attachType: file
+        recipients: xxxxxxxxxxx
+        subject: Media servers are down
+  notifyAvgDurationThreshold: null
+  plugins:
+    ExecutionLifecycle: {}
+  schedule:
+    month: '*'
+    time:
+      hour: '*'
+      minute: 0/15
+      seconds: '0'
+    weekday:
+      day: '*'
+    year: '*'
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - exec: /opt/scripts/mediaCheck.py
+    keepgoing: false
+    strategy: node-first
+  timeZone: America/New_York
+  timeout: 2m
+  uuid: monitoring-homelab-radarr-and-sonarr
