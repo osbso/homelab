@@ -1,0 +1,60 @@
+- defaultTab: nodes
+  description: Collects basic Linux system health and diagnostic information
+  executionEnabled: true
+  id: onitoring-linux-health-check
+  loglevel: INFO
+  name: Linux System Health Check
+  nodeFilterEditable: false
+  scheduleEnabled: true
+  sequence:
+    commands:
+      - exec: |
+          echo "==== SYSTEM HEALTH REPORT ===="
+          echo ""
+          echo "-- Hostname and Uptime --"
+          hostname
+          uptime
+          echo ""
+
+          echo "-- OS Info --"
+          uname -a
+          lsb_release -a 2>/dev/null || cat /etc/*release
+          echo ""
+
+          echo "-- CPU Load --"
+          top -bn1 | grep "load average"
+          echo ""
+
+          echo "-- Memory Usage --"
+          free -m
+          echo ""
+
+          echo "-- Disk Usage --"
+          df -h
+          echo ""
+
+          echo "-- Top 5 CPU Consuming Processes --"
+          ps -eo pid,ppid,cmd,%mem,%cpu --sort=-%cpu | head -n 6
+          echo ""
+
+          echo "-- Top 5 Memory Consuming Processes --"
+          ps -eo pid,ppid,cmd,%mem,%cpu --sort=-%mem | head -n 6
+          echo ""
+
+          echo "-- Open TCP Connections --"
+          ss -tuna | wc -l
+          echo ""
+
+          echo "-- Recent Syslog Messages (last 10 lines) --"
+          tail -n 10 /var/log/syslog 2>/dev/null || tail -n 10 /var/log/messages
+          echo ""
+
+          echo "==== END OF REPORT ===="
+    keepgoing: false
+    strategy: node-first
+  nodefilters:
+    dispatch:
+      keepgoing: false
+      rankOrder: ascending
+    filter: "osFamily:linux"
+  uuid: monitoring-linux-health-check

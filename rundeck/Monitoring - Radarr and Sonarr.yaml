@@ -10,7 +10,7 @@
     onfailure:
       email:
         attachType: file
-        recipients: xxxxxxxxxxx
+        recipients: 
         subject: Media servers are down
   notifyAvgDurationThreshold: null
   plugins:
