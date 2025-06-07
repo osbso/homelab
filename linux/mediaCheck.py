@@ -58,7 +58,7 @@ def obfuscateUrl(url, show_ip=2, show_port=0):
 def formatUptime(start_time_str):
     try:
         start_time = datetime.strptime(start_time_str, "%Y-%m-%dT%H:%M:%SZ")
-        now = datetime.timezone.utc()
+        now = datetime.utcnow()
         uptime = now - start_time
         days = uptime.days
         hours, remainder = divmod(uptime.seconds, 3600)
