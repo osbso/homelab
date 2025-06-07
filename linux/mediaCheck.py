@@ -23,23 +23,42 @@ ch.setFormatter(formatter)
 logger.addHandler(ch)
 
 def obfuscate(s, show=4):
-    if not s:
-        return '***'
-    if len(s) <= show:
-        return '*' * len(s)
-    return '*' * (len(s) - show) + s[-show:]
+    """Show the first and last `show` characters, obfuscate the middle."""
+    if not s or len(s) <= show * 2:
+        return '*' * len(s) if s else '***'
+    return s[:show] + '*' * (len(s) - show * 2) + s[-show:]
 
-def obfuscate_url(url):
+def obfuscateUrl(url, show_ip=2, show_port=0):
+    """
+    Show the first and last `show_ip` characters of the IP/host,
+    hide the first 3 of the port, and leave the endpoint intact.
+    """
     try:
         parsed = urlparse(url)
-        return f"{parsed.scheme}://***"
+        host = parsed.hostname or ""
+        # Show first 3 and last 3 chars of IP/host, obfuscate the rest
+        if len(host) <= show_ip * 2:
+            ob_host = '*' * len(host)
+        else:
+            ob_host = host[:show_ip] + '*' * (len(host) - show_ip * 2) + host[-show_ip:]
+        # Obfuscate the first 3 of the port, show the rest
+        port = parsed.port
+        ob_port = ''
+        if port:
+            port_str = str(port)
+            if len(port_str) <= 3:
+                ob_port = ':' + '*' * len(port_str)
+            else:
+                ob_port = ':' + '*' * 3 + port_str[3:]
+        path = parsed.path
+        return f"{parsed.scheme}://{ob_host}{ob_port}{path}"
     except Exception:
         return "***"
 
-def format_uptime(start_time_str):
+def formatUptime(start_time_str):
     try:
         start_time = datetime.strptime(start_time_str, "%Y-%m-%dT%H:%M:%SZ")
-        now = datetime.utcnow()
+        now = datetime.timezone.utc()
         uptime = now - start_time
         days = uptime.days
         hours, remainder = divmod(uptime.seconds, 3600)
@@ -58,11 +77,11 @@ def checkService(name, url, api_key):
         log_url = api_url
         log_key = api_key
     else:
-        log_url = obfuscate_url(api_url)
+        log_url = obfuscateUrl(api_url)
         log_key = obfuscate(api_key)
     logger.info(f"Calling {name} API: {log_url} with API key: {log_key}")
     try:
-        logger.debug(f"Sending GET req to {api_url} with headers {headers}")
+        logger.debug(f"Sending GET to {api_url} with headers {headers}")
         response = requests.get(api_url, headers=headers, timeout=10)
         logger.debug(f"Received response from {name} ({response.status_code}): {response.text}")
         if response.status_code == 200:
@@ -71,13 +90,13 @@ def checkService(name, url, api_key):
                 data = response.json()
                 version = data.get("version", "unknown")
                 start_time = data.get("startTime", None)
-                uptime_str = format_uptime(start_time) if start_time else "unknown"
+                uptime_str = formatUptime(start_time) if start_time else "unknown"
                 return True, version, start_time, uptime_str
             except Exception as jsonParsingError:
                 logger.error(f"Failed to parse {name} status JSON: {jsonParsingError}")
                 return True, "unknown", None, "unknown"
         else:
-            logger.error(f"{name} API call failed with status {response.status_code}: {response.text}")
+            logger.error(f"{name} API call failed, status {response.status_code}: {response.text}")
             return False, None, None, None
     except requests.exceptions.RequestException as apiConnectionError:
         logger.error(f"Error contacting {name}: {apiConnectionError}")
@@ -86,9 +105,9 @@ def checkService(name, url, api_key):
 def executeChecks(args):
     if args.debug:
         logger.setLevel(logging.DEBUG)
-        logger.debug("Debug mode enabled.")
+        logger.debug("Debug mode set.")
 
-    def log_result(service, result_tuple):
+    def logResult(service, result_tuple):
         result, version, start_time, uptime_str = result_tuple
         if result:
             logger.info(f"{service} (v{version}) is UP. Started: {start_time}, Uptime: {uptime_str}")
@@ -98,8 +117,8 @@ def executeChecks(args):
     def checkAll():
         radarr_result = checkService("Radarr", args.radarr_url, args.radarr_token)
         sonarr_result = checkService("Sonarr", args.sonarr_url, args.sonarr_token)
-        log_result("Radarr", radarr_result)
-        log_result("Sonarr", sonarr_result)
+        logResult("Radarr", radarr_result)
+        logResult("Sonarr", sonarr_result)
         return radarr_result[0] and sonarr_result[0]
 
     if args.daemon:
@@ -126,4 +145,5 @@ if __name__ == "__main__":
     parser.add_argument("--interval", type=int, default=check_int, help="Interval in seconds for daemon mode")
 
     args = parser.parse_args()
+
     executeChecks(args)
