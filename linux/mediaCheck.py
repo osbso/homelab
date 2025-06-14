@@ -9,10 +9,10 @@ import time
 from urllib.parse import urlparse
 from datetime import datetime, timedelta
 
-url_radarr = "http://192.168.2.10:19822"
-url_sonarr = "http://192.168.2.10:19823"
-apikey_radarr = "84316978c83f4060a85383516e811429"
-apikey_sonarr = "a06069e8b69d4cbaa0f9ae2607d5b631"
+url_radarr = ""
+url_sonarr = ""
+apikey_radarr = ""
+apikey_sonarr = ""
 check_int = 300
 
 class MonitorMediaServer:
@@ -158,7 +158,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    # Use command line value if provided, else fallback to environment variable, else fallback to module-level default
+    # cli option
     radarr_url = args.radarr_url if args.radarr_url else os.getenv("url_radarr", url_radarr)
     sonarr_url = args.sonarr_url if args.sonarr_url else os.getenv("url_sonarr", url_sonarr)
     radarr_token = args.radarr_token if args.radarr_token else os.getenv("apikey_radarr", apikey_radarr)
