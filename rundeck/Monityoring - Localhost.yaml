@@ -30,7 +30,7 @@
           echo ""
 
           echo "-- Disk Usage --"
-          df -h
+          df -h | (read -r header && echo "$header" && sort -k 2 -hr)
           echo ""
 
           echo "-- Top 5 CPU Consuming Processes --"
